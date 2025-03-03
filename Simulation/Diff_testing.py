@@ -1,15 +1,10 @@
-# Adding shearing and bending
-# There are three types of edges: 1. structural, 2. shearing, 3. bending
-# Structural: [i, j]-[i, j+1]; [i, j]-[i+1, j]} 
-# Shear:[i j]-[i+1, j+1]; [i+1, j]-[i, j+1]} 
-# Flexion (bend)[i, j]-[i, j+2] ;[i, j]-[i+2, j] 
-# A visualization is: https://ics.uci.edu/~shz/courses/cs114/docs/proj3/index.html
+# This is a testing of which part could be taken out for the automatic differentiation
 
 import argparse
 import numpy as np
 import taichi as ti
 
-
+ti.init(arch=ti.cpu)
 @ti.data_oriented
 class Cloth:
     def __init__(self, N):
@@ -20,7 +15,7 @@ class Cloth:
         self.NE_total = self.NE + self.NB  # total number of springs
 
         # -- Vertex data
-        self.pos = ti.Vector.field(2, ti.f32, self.NV)
+        self.pos = ti.Vector.field(2, ti.f32, self.NV, needs_grad=True)
         self.initPos = ti.Vector.field(2, ti.f32, self.NV)
         self.vel = ti.Vector.field(2, ti.f32, self.NV)
         self.force = ti.Vector.field(2, ti.f32, self.NV)
@@ -29,7 +24,7 @@ class Cloth:
         # For sparse solver usage
         self.vel_1D = ti.ndarray(ti.f32, 2 * self.NV)
         self.force_1D = ti.ndarray(ti.f32, 2 * self.NV)
-        self.b = ti.ndarray(ti.f32, 2 * self.NV, needs_grad=True)
+        self.b = ti.field(ti.f32, 2 * self.NV, needs_grad=True)
 
         # -- Spring data
         # the spring vlues are stored in indices [0, NE) for structural/shear springs
@@ -43,7 +38,7 @@ class Cloth:
         self.rest_len = ti.field(ti.f32, self.NE_total)
 
         # Heterogeneous spring stiffness: each edge can have its own stiffness
-        self.spring_ks = ti.field(ti.f32, self.NE)   # Heterogeneous stiffness
+        self.spring_ks = ti.field(ti.f32, self.NE, needs_grad=True)   # Heterogeneous stiffness
         self.bend_ks = ti.field(ti.f32, self.NB)  # bending stiffness
 
         # Global parameters (can remain global or partially heterogeneous if desired)
@@ -74,6 +69,10 @@ class Cloth:
         self.fix_vertex_list = [i * (N + 1) + N for i in range(N + 1)]
         self.Jf = ti.Matrix.field(2, 2, ti.f32, len(self.fix_vertex_list))
         self.num_fixed_vertices = len(self.fix_vertex_list)
+
+        self.loss = ti.field(dtype=ti.f32, shape=(), needs_grad=True)
+
+        
 
     @ti.kernel
     def init_pos(self):
@@ -325,13 +324,14 @@ class Cloth:
     @ti.kernel
     def compute_b(
         self,
-        b: ti.types.ndarray(),
         f: ti.types.ndarray(),
         Kv: ti.types.ndarray(),
         h: ti.f32,
     ):
+        # Now we write directly to self.b
         for i in range(2 * self.NV):
-            b[i] = (f[i] + Kv[i] * h) * h
+            self.b[i] = (f[i] + Kv[i] * h) * h
+
 
     def update(self, h):
         # 1. Compute force
@@ -391,33 +391,34 @@ class Cloth:
         self.spring2indices()
         canvas.lines(self.pos, width=0.005, indices=self.indices, color=(0.0, 0.0, 1.0))
         canvas.circles(self.pos, radius, color)
+    
+
+
+    @ti.kernel
+    def compute_loss(self):
+        # just a sample loss function
+        self.loss[None] = 0.0
+        for i in range(2 * self.NV):
+            self.loss[None] += self.b[i] * self.b[i]
+
 
 
 def main():
-    parser = argparse.ArgumentParser()
-    parser.add_argument("-g", "--use-ggui", action="store_true", help="Display with GGUI")
-    parser.add_argument(
-        "-a",
-        "--arch",
-        required=False,
-        default="cpu",
-        dest="arch",
-        type=str,
-        help="The arch (backend) to run this example on",
-    )
-    args, unknowns = parser.parse_known_args()
-    arch = args.arch
-    if arch in ["x64", "cpu", "arm64"]:
-        ti.init(arch=ti.cpu, unrolling_limit=0)
-    elif arch in ["cuda", "gpu"]:
-        ti.init(arch=ti.cuda)
-    else:
-        raise ValueError("Only CPU and CUDA backends are supported for now.")
-
+    
+    ti.init(arch=ti.cpu)
     h = 0.02
     pause = False
-    cloth = Cloth(N=32)
-    print(cloth.spring_ks.to_numpy())
+    cloth = Cloth(N=10)
+    with ti.ad.Tape(loss=cloth.loss):
+        cloth.update(h)         # Forward simulation
+        cloth.compute_loss()    # Evaluate the loss
+
+    # Now Taichi has computed the gradients:
+    # e.g. cloth.pos.grad, cloth.spring_ks.grad, etc.
+    print("loss =", cloth.loss[None])
+    print("d(loss)/d pos =", cloth.pos.grad.to_numpy()[:10])
+    print("d(loss)/d spring_ks =", cloth.spring_ks.grad.to_numpy()[:10])
+
     """use_ggui = args.use_ggui
     if not use_ggui:
         gui = ti.GUI("Heterogeneous with bendering", res=(500, 500))
