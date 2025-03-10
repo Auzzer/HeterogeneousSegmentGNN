@@ -339,7 +339,7 @@ def main():
 
     h = 0.01
     pause = False
-    cloth = Cloth(N=32)
+    cloth = Cloth(N=20)
     print(cloth.spring_ks.to_numpy())
     use_ggui = args.use_ggui
     if not use_ggui:

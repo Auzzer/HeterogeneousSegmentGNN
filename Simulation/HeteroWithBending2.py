@@ -416,9 +416,9 @@ def main():
 
     h = 0.02
     pause = False
-    cloth = Cloth(N=3)
+    cloth = Cloth(N=20)
     print(cloth.spring_ks.to_numpy())
-    """use_ggui = args.use_ggui
+    use_ggui = args.use_ggui
     if not use_ggui:
         gui = ti.GUI("Heterogeneous with bendering", res=(500, 500))
         while gui.running:
@@ -447,8 +447,8 @@ def main():
 
             canvas = window.get_canvas()
             cloth.displayGGUI(canvas)
-            window.show()"""
-    return cloth
+            window.show()
+    
 
 if __name__ == "__main__":
     cloth=main()

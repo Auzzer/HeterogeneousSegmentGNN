@@ -42,8 +42,8 @@ class Cloth3D:
 
         # Global parameters
         self.kd = 0.5     # damping
-        self.kf = 1e7     # fix point stiffness
-        self.gravity = ti.Vector([0.0, -9.8, 0.0])  # 3D gravity
+        self.kf = 1e5     # fix point stiffness
+        self.gravity = ti.Vector([0.0, -2, 0.0])  # 3D gravity
 
         # Initialize
         self.init_positions()
@@ -75,8 +75,8 @@ class Cloth3D:
         """
         for i, j in ti.ndrange(self.N + 1, self.N + 1):
             k = i * (self.N + 1) + j
-            x_coord = i / self.N * 0.5 + 0.25
-            y_coord = 0.5             # a small offset in y to see it in mid-air
+            x_coord = 0.5
+            y_coord = i / self.N * 0.5 + 0.25             # a small offset in y to see it in mid-air
             z_coord = j / self.N * 0.5 + 0.25
             self.pos[k] = ti.Vector([x_coord, y_coord, z_coord])
             self.initPos[k] = self.pos[k]
@@ -151,7 +151,7 @@ class Cloth3D:
     def init_spring_stiffness(self):
         # Example: randomize within [1000, 1300]
         for e in range(self.NE):
-            self.spring_ks[e] = 1000.0 + 300.0 * ti.random()
+            self.spring_ks[e] = 1000.0 + 1000.0 * ti.random()
 
     @ti.kernel
     def init_bend_stiffness(self):
@@ -242,7 +242,8 @@ class Cloth3D:
             # but carefully: rest_len[i] vs l
             r0 = self.rest_len[i]
             dxdxT = dx.outer_product(dx)  # 3x3
-            self.Jx[i] =  (I3 - r0 * l * (I3 - dxdxT * (l**2)))*self.spring_ks[i]
+            # 修正后的公式
+            self.Jx[i] = (I3-self.rest_len[i]*l* (I3 - dxdxT*l**2))*self.spring_ks[i]
 
             # Velocity Jacobian = kd * I3 for each end, with sign pattern
             self.Jv[i] = self.kd * I3
@@ -397,7 +398,7 @@ def main():
         raise ValueError("Only CPU/CUDA supported in this snippet.")
 
     cloth_3d = Cloth3D(N=10)
-    h = 0.02
+    h = 0.01
     pause = False
 
     if not args.use_ggui:
@@ -432,13 +433,15 @@ def main():
             if not pause:
                 cloth_3d.update(h)
 
-            camera.position(1.0, 0.8, 1.2)    # adjust to see cloth
-            camera.lookat(0.5, 0.0, 0.5)     # center of cloth
+            camera.position(0.5, 0.5, 0.5)
+            camera.lookat(0.5, 0.5, 2)
+            # center of cloth
             scene.set_camera(camera)
 
             # draw lines
-            scene.lines(cloth_3d.pos, width=0.002, indices=cloth_3d.indices, color=(0, 0, 1))
-            scene.particles(cloth_3d.pos, radius=0.01, color=(1, 1, 1))
+            # 在 GGUI 中正确渲染 3D
+            scene.lines(cloth_3d.pos, indices=cloth_3d.indices, color=(0, 0, 1), width=0.002)
+            scene.particles(cloth_3d.pos, radius=0.005, color=(1, 1, 1))
 
             canvas.scene(scene)
             window.show()
