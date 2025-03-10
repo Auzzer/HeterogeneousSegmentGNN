@@ -42,7 +42,7 @@ class Cloth3D:
 
         # Global parameters
         self.kd = 0.5     # damping
-        self.kf = 1e5     # fix point stiffness
+        self.kf = 1e7     # fix point stiffness
         self.gravity = ti.Vector([0.0, -2, 0.0])  # 3D gravity
 
         # Initialize
@@ -422,6 +422,7 @@ def main():
         scene = ti.ui.Scene()
         camera = ti.ui.Camera()
         canvas = window.get_canvas()
+        canvas.set_background_color((1, 1, 1))
         cloth_3d.spring2indices()
 
         while window.running:
@@ -442,8 +443,8 @@ def main():
 
             # draw lines
             # 在 GGUI 中正确渲染 3D
-            scene.lines(cloth_3d.pos, indices=cloth_3d.indices, color=(0, 0, 1), width=0.001)
-            scene.particles(cloth_3d.pos, radius=0.05, color=(0, 0, 1))
+            scene.lines(cloth_3d.pos, indices=cloth_3d.indices, color=(0, 0, 1), width=0.01)
+            scene.particles(cloth_3d.pos, radius=0.005, color=(0, 0, 1))
 
             canvas.scene(scene)
             window.show()
