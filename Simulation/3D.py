@@ -63,7 +63,7 @@ class Cloth3D:
         # Let’s fix the top row of the grid to maintain shape
         # e.g., all vertices with i=0 or i=N (you can choose whichever you prefer).
         # For demonstration, let's fix row i=0. That means j=0..N for i=0
-        self.fix_vertex_list = [j * (N+1) + N for j in range(N+1)]
+        self.fix_vertex_list = [i * (N+1) + N for i in range(N+1)]
         self.Jf = ti.Matrix.field(3, 3, ti.f32, len(self.fix_vertex_list))
         self.num_fixed_vertices = len(self.fix_vertex_list)
 
@@ -75,9 +75,10 @@ class Cloth3D:
         """
         for i, j in ti.ndrange(self.N + 1, self.N + 1):
             k = i * (self.N + 1) + j
-            x_coord = 0.5
-            y_coord = i / self.N * 0.5 + 0.25             # a small offset in y to see it in mid-air
-            z_coord = j / self.N * 0.5 + 0.25
+            x_coord = i / self.N * 0.5 + 0.25
+            # Let the y-coordinate vary so that the top row (j = N) is higher.
+            y_coord = j / self.N * 0.5 + 0.75  # top row at y=1.25, bottom row at y=0.75
+            z_coord = 0.25
             self.pos[k] = ti.Vector([x_coord, y_coord, z_coord])
             self.initPos[k] = self.pos[k]
             self.vel[k] = ti.Vector([0.0, 0.0, 0.0])
@@ -151,7 +152,7 @@ class Cloth3D:
     def init_spring_stiffness(self):
         # Example: randomize within [1000, 1300]
         for e in range(self.NE):
-            self.spring_ks[e] = 1000.0 + 1000.0 * ti.random()
+            self.spring_ks[e] = 100.0 + 100.0 * ti.random()
 
     @ti.kernel
     def init_bend_stiffness(self):
@@ -387,7 +388,7 @@ class Cloth3D:
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("-g", "--use-ggui", action="store_true", help="Use GGUI")
-    parser.add_argument("-a", "--arch", default="cpu", type=str, help="Backend")
+    parser.add_argument("-a", "--arch", default="gpu", type=str, help="Backend")
     args = parser.parse_args()
 
     if args.arch in ["cpu", "x64", "arm64"]:
@@ -417,7 +418,7 @@ def main():
             gui.show()
     else:
         # GGUI display as points/lines in 3D
-        window = ti.ui.Window("3D Cloth Simulation", (800, 600))
+        window = ti.ui.Window("3D Cloth Simulation", (800, 800))
         scene = ti.ui.Scene()
         camera = ti.ui.Camera()
         canvas = window.get_canvas()
@@ -433,15 +434,16 @@ def main():
             if not pause:
                 cloth_3d.update(h)
 
-            camera.position(0.5, 0.5, 0.5)
-            camera.lookat(0.5, 0.5, 2)
+            camera.position(0.5, 1.0, 1.5)
+            camera.lookat(0.5, 1.0, 0.5)
+
             # center of cloth
             scene.set_camera(camera)
 
             # draw lines
             # 在 GGUI 中正确渲染 3D
-            scene.lines(cloth_3d.pos, indices=cloth_3d.indices, color=(0, 0, 1), width=0.002)
-            scene.particles(cloth_3d.pos, radius=0.005, color=(1, 1, 1))
+            scene.lines(cloth_3d.pos, indices=cloth_3d.indices, color=(0, 0, 1), width=0.001)
+            scene.particles(cloth_3d.pos, radius=0.05, color=(0, 0, 1))
 
             canvas.scene(scene)
             window.show()

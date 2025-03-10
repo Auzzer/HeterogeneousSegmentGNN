@@ -289,7 +289,7 @@ def main():
         "-a",
         "--arch",
         required=False,
-        default="cpu",
+        default="cuda",
         dest="arch",
         type=str,
         help="The arch (backend) to run this example on",
