@@ -52,13 +52,13 @@ class Cloth3D:
         self.init_bend_stiffness()
         
         # Build mass matrix (3*NV x 3*NV)
-        self.MassBuilder = ti.linalg.SparseMatrixBuilder(3*self.NV, 3*self.NV, max_num_triplets=1000)
+        self.MassBuilder = ti.linalg.SparseMatrixBuilder(3*self.NV, 3*self.NV, max_num_triplets=100000)
         self.init_mass_sp(self.MassBuilder)
         self.M = self.MassBuilder.build()
 
         # Builders for damping & stiffness
-        self.DBuilder = ti.linalg.SparseMatrixBuilder(3*self.NV, 3*self.NV, max_num_triplets=100000)
-        self.KBuilder = ti.linalg.SparseMatrixBuilder(3*self.NV, 3*self.NV, max_num_triplets=100000)
+        self.DBuilder = ti.linalg.SparseMatrixBuilder(3*self.NV, 3*self.NV, max_num_triplets=10000000)
+        self.KBuilder = ti.linalg.SparseMatrixBuilder(3*self.NV, 3*self.NV, max_num_triplets=10000000)
 
         # Let’s fix the top row of the grid to maintain shape
         # e.g., all vertices with i=0 or i=N (you can choose whichever you prefer).
@@ -152,7 +152,7 @@ class Cloth3D:
     def init_spring_stiffness(self):
         # Example: randomize within [1000, 1300]
         for e in range(self.NE):
-            self.spring_ks[e] = 100.0 + 100.0 * ti.random()
+            self.spring_ks[e] = 5000.0 + 1000.0 * ti.random()
 
     @ti.kernel
     def init_bend_stiffness(self):
@@ -398,56 +398,34 @@ def main():
     else:
         raise ValueError("Only CPU/CUDA supported in this snippet.")
 
-    cloth_3d = Cloth3D(N=10)
+    cloth_3d = Cloth3D(N=64)
     h = 0.01
-    pause = False
+    
+    # GGUI display as points/lines in 3D
+    window = ti.ui.Window("3D Cloth Simulation", (1600, 1600))
+    scene = ti.ui.Scene()
+    camera = ti.ui.Camera()
+    canvas = window.get_canvas()
+    canvas.set_background_color((1, 1, 1))
+    cloth_3d.spring2indices()
 
-    if not args.use_ggui:
-        gui = ti.GUI("3D Cloth (projected to 2D for debug)", res=(600, 600))
-        while gui.running:
-            for e in gui.get_events():
-                if e.key == gui.ESCAPE:
-                    gui.running = False
-                elif e.key == gui.SPACE:
-                    pause = not pause
+    while window.running:
+        cloth_3d.update(h)
 
-            if not pause:
-                cloth_3d.update(h)
+        camera.position(0.5, 1.0, 1.5)
+        camera.lookat(0.5, 1.0, 0.5)
 
-            cloth_3d.display(gui)
-            gui.show()
-    else:
-        # GGUI display as points/lines in 3D
-        window = ti.ui.Window("3D Cloth Simulation", (800, 800))
-        scene = ti.ui.Scene()
-        camera = ti.ui.Camera()
-        canvas = window.get_canvas()
-        canvas.set_background_color((1, 1, 1))
-        cloth_3d.spring2indices()
+        # center of cloth
+        scene.set_camera(camera)
 
-        while window.running:
-            if window.get_event(ti.ui.PRESS):
-                if window.event.key == ti.ui.ESCAPE:
-                    break
-                elif window.event.key == ti.ui.SPACE:
-                    pause = not pause
-
-            if not pause:
-                cloth_3d.update(h)
-
-            camera.position(0.5, 1.0, 1.5)
-            camera.lookat(0.5, 1.0, 0.5)
-
-            # center of cloth
-            scene.set_camera(camera)
-
-            # draw lines
-            # 在 GGUI 中正确渲染 3D
-            scene.lines(cloth_3d.pos, indices=cloth_3d.indices, color=(0, 0, 1), width=0.01)
-            scene.particles(cloth_3d.pos, radius=0.005, color=(0, 0, 1))
-
-            canvas.scene(scene)
-            window.show()
+        # draw lines
+        # 在 GGUI 中正确渲染 3D
+        
+        scene.mesh(cloth_3d.pos,
+            indices=cloth_3d.indices,
+            two_sided=True)
+        canvas.scene(scene)
+        window.show()
 
 if __name__ == "__main__":
     main()

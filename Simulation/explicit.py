@@ -10,8 +10,8 @@ dt = 4e-2 / n
 substeps = int(1 / 60 // dt)
 
 gravity = ti.Vector([0, -9.8, 0])
-global_spring_Y = 1e3  # base spring stiffness, as requested
-dashpot_damping = 1e4
+global_spring_Y = 1e2  # base spring stiffness, as requested
+dashpot_damping = 1e3
 drag_damping = 1
 
 # 3D simulation state: now the grid indices are:
@@ -51,8 +51,7 @@ def initialize_spring_field():
     # In addition to a random factor in [1.0, 1.5],
     # add a modulation based on the layer index (k) so that different layers differ.
     for i, j, k in spring_Y_field:
-        factor = 0.5 * (k / (d - 1))  # normalized modulation in [0, 0.5]
-        spring_Y_field[i, j, k] = global_spring_Y * (1.0 + 0.5 * ti.random() + factor)
+        spring_Y_field[i, j, k] = global_spring_Y + 1000.0 * ti.random()
 
 @ti.kernel
 def initialize_mesh_indices():
@@ -158,6 +157,7 @@ initialize_mesh_indices()
 update_colors()
 
 while window.running:
+    
     for i in range(substeps):
         substep()
         current_t += dt

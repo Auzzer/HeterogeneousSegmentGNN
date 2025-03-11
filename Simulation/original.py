@@ -35,9 +35,9 @@ class Cloth:
         self.gravity = ti.Vector([0.0, -2.0])
         self.init_pos()
         self.init_edges()
-        self.MassBuilder = ti.linalg.SparseMatrixBuilder(2 * self.NV, 2 * self.NV, max_num_triplets=100000)
-        self.DBuilder = ti.linalg.SparseMatrixBuilder(2 * self.NV, 2 * self.NV, max_num_triplets=100000)
-        self.KBuilder = ti.linalg.SparseMatrixBuilder(2 * self.NV, 2 * self.NV, max_num_triplets=100000)
+        self.MassBuilder = ti.linalg.SparseMatrixBuilder(2 * self.NV, 2 * self.NV, max_num_triplets=10000000)
+        self.DBuilder = ti.linalg.SparseMatrixBuilder(2 * self.NV, 2 * self.NV, max_num_triplets=10000000)
+        self.KBuilder = ti.linalg.SparseMatrixBuilder(2 * self.NV, 2 * self.NV, max_num_triplets=10000000)
         self.init_mass_sp(self.MassBuilder)
         self.M = self.MassBuilder.build()
         self.fix_vertex_list = [i * (N + 1) + N for i in range(N + 1)]
@@ -305,7 +305,7 @@ def main():
 
     h = 0.01
     pause = False
-    cloth = Cloth(N=32)
+    cloth = Cloth(N=64)
 
     use_ggui = args.use_ggui
     if not use_ggui:
