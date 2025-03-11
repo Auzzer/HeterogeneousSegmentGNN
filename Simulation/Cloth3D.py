@@ -52,13 +52,13 @@ class Cloth3D:
         self.init_bend_stiffness()
         
         # Build mass matrix (3*NV x 3*NV)
-        self.MassBuilder = ti.linalg.SparseMatrixBuilder(3*self.NV, 3*self.NV, max_num_triplets=100000)
+        self.MassBuilder = ti.linalg.SparseMatrixBuilder(3*self.NV, 3*self.NV, max_num_triplets=1000)
         self.init_mass_sp(self.MassBuilder)
         self.M = self.MassBuilder.build()
 
         # Builders for damping & stiffness
-        self.DBuilder = ti.linalg.SparseMatrixBuilder(3*self.NV, 3*self.NV, max_num_triplets=10000000)
-        self.KBuilder = ti.linalg.SparseMatrixBuilder(3*self.NV, 3*self.NV, max_num_triplets=10000000)
+        self.DBuilder = ti.linalg.SparseMatrixBuilder(3*self.NV, 3*self.NV, max_num_triplets=100000)
+        self.KBuilder = ti.linalg.SparseMatrixBuilder(3*self.NV, 3*self.NV, max_num_triplets=100000)
 
         # Let’s fix the top row of the grid to maintain shape
         # e.g., all vertices with i=0 or i=N (you can choose whichever you prefer).
@@ -152,7 +152,7 @@ class Cloth3D:
     def init_spring_stiffness(self):
         # Example: randomize within [1000, 1300]
         for e in range(self.NE):
-            self.spring_ks[e] = 5000.0 + 1000.0 * ti.random()
+            self.spring_ks[e] = 1000.0 + 500.0 * ti.random()
 
     @ti.kernel
     def init_bend_stiffness(self):
@@ -398,11 +398,13 @@ def main():
     else:
         raise ValueError("Only CPU/CUDA supported in this snippet.")
 
-    cloth_3d = Cloth3D(N=64)
+    cloth_3d = Cloth3D(N=16)
     h = 0.01
     
+
+    
     # GGUI display as points/lines in 3D
-    window = ti.ui.Window("3D Cloth Simulation", (1600, 1600))
+    window = ti.ui.Window("3D Cloth Simulation", (800, 800))
     scene = ti.ui.Scene()
     camera = ti.ui.Camera()
     canvas = window.get_canvas()
@@ -420,10 +422,9 @@ def main():
 
         # draw lines
         # 在 GGUI 中正确渲染 3D
-        
-        scene.mesh(cloth_3d.pos,
-            indices=cloth_3d.indices,
-            two_sided=True)
+        scene.lines(cloth_3d.pos, indices=cloth_3d.indices, color=(0, 0, 1), width=0.01)
+        scene.particles(cloth_3d.pos, radius=0.005, color=(0, 0, 1))
+
         canvas.scene(scene)
         window.show()
 

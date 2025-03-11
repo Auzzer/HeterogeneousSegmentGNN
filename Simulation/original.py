@@ -37,7 +37,7 @@ class Cloth:
         self.init_edges()
         self.MassBuilder = ti.linalg.SparseMatrixBuilder(2 * self.NV, 2 * self.NV, max_num_triplets=10000000)
         self.DBuilder = ti.linalg.SparseMatrixBuilder(2 * self.NV, 2 * self.NV, max_num_triplets=10000000)
-        self.KBuilder = ti.linalg.SparseMatrixBuilder(2 * self.NV, 2 * self.NV, max_num_triplets=10000000)
+        self.KBuilder = ti.linalg.SparseMatrixBuilder(2 * self.NV, 2 * self.NV, max_num_triplets=100000000)
         self.init_mass_sp(self.MassBuilder)
         self.M = self.MassBuilder.build()
         self.fix_vertex_list = [i * (N + 1) + N for i in range(N + 1)]
