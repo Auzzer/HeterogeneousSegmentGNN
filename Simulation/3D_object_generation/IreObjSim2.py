@@ -1,3 +1,4 @@
+# use the collision detection and the opposite force 
 import argparse
 import numpy as np
 import taichi as ti
@@ -257,6 +258,52 @@ class Cube3D:
         for i in self.force:
             self.force[i] = ti.Vector.zero(ti.f32,3)
 
+    @ti.func
+    def compute_collision_forces(self):
+        # Parameters: adjust these as needed
+        collision_radius = 0.01    # radius around each particle for collision detection
+        col_force_k = 5          # collision stiffness (a relatively small value)
+
+        # (A) Particle–Particle collisions
+        for i in range(self.n_verts):
+            for j in range(i+1, self.n_verts):
+                diff = self.pos[j] - self.pos[i]
+                dist = diff.norm()
+                # If distance is less than twice the collision radius (i.e., spheres overlap)
+                if dist < 2 * collision_radius and dist > 1e-6:
+                    penetration = 2 * collision_radius - dist
+                    repulsion = col_force_k * penetration * (diff / dist)
+                    # Apply equal and opposite forces
+                    self.force[i] -= repulsion
+                    self.force[j] += repulsion
+
+        # (B) Particle–Edge collisions (optional)
+        # For each edge, check each particle (not an endpoint) for proximity.
+        for e in range(self.n_edges):
+            A = self.pos[self.spring[e][0]]
+            B = self.pos[self.spring[e][1]]
+            AB = B - A
+            AB_norm_sq = AB.dot(AB)
+            for i in range(self.n_verts):
+                # Skip if this particle is an endpoint of the edge.
+                if i == self.spring[e][0] or i == self.spring[e][1]:
+                    continue
+                P = self.pos[i]
+                AP = P - A
+                # Compute projection parameter t in [0,1]
+                t = AP.dot(AB) / (AB_norm_sq + 1e-12)
+                t = ti.min(ti.max(t, 0.0), 1.0)
+                closest = A + t * AB
+                diff = P - closest
+                d = diff.norm()
+                # If the distance is less than the collision radius:
+                if d < collision_radius and d > 1e-6:
+                    penetration = collision_radius - d
+                    repulsion = col_force_k * penetration * (diff / d)
+                    # Apply repulsive force to the particle
+                    self.force[i] += repulsion
+                    # Optionally, you could also distribute a part of this force to the edge endpoints
+
     @ti.kernel
     def compute_force(self):
         self.clear_force()
@@ -283,7 +330,9 @@ class Cube3D:
         for idx in ti.static(range(self.num_fixed_vertices)):
             v_id = self.fix_vertex_list[idx]
             self.force[v_id] += self.kf*(self.initPos[v_id] - self.pos[v_id])
-
+        
+        # collision forces
+        self.compute_collision_forces()
     @ti.kernel
     def compute_Jacobians(self):
         I3 = ti.Matrix.identity(ti.f32,3)
@@ -351,9 +400,9 @@ class Cube3D:
 
     @ti.kernel
     def compute_b(self, b: ti.types.ndarray(),
-                  f: ti.types.ndarray(),
-                  Kv: ti.types.ndarray(),
-                  h: ti.f32):
+                f: ti.types.ndarray(),
+                Kv: ti.types.ndarray(),
+                h: ti.f32):
         for i in range(3*self.n_verts):
             b[i] = h*(f[i] + Kv[i]*h)
 
@@ -383,11 +432,13 @@ class Cube3D:
 
         Kv = K @ self.vel_1D
         self.compute_b(self.b, self.force_1D, Kv, h)
-
+        """
         solver = ti.linalg.SparseSolver(solver_type="LDLT")
         solver.analyze_pattern(A)
         solver.factorize(A)
-        dv = solver.solve(self.b)
+        dv = solver.solve(self.b)"""
+        solver = ti.linalg.SparseCG(A, self.b)
+        dv, _ = solver.solve()
 
         self.updatePosVel(h, dv)
 
@@ -422,9 +473,9 @@ def main():
     canvas = window.get_canvas()
     canvas.set_background_color((1,1,1))
 
-    dt = 0.01
+    h = 0.01
     while window.running:
-        cube_3d.update(dt)
+        cube_3d.update(h)
 
         camera.position(1.2,1.8,2.2)
         camera.lookat(0.5,1.0,0.5)
