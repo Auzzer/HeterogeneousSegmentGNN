@@ -332,9 +332,9 @@ def main():
         raise ValueError("Only CPU/CUDA supported in this snippet.")
 
     # Create a 3D volumetric cloth of size 8x8x8
-    cloth_3d = Cube3D(N=4)
+    cube_3d = Cube3D(N=4)
     h = 0.01
-    cloth_3d.spring2indices()
+    cube_3d.spring2indices()
 
     # GGUI display
     window = ti.ui.Window("3D Volumetric Cloth (Structural Only)", (800, 800))
@@ -344,7 +344,7 @@ def main():
     canvas.set_background_color((1, 1, 1))
 
     while window.running:
-        cloth_3d.update(h)
+        cube_3d.update(h)
 
         # Set camera
         camera.position(1.2, 1.2, 1.2)
@@ -352,8 +352,8 @@ def main():
         scene.set_camera(camera)
 
         # Draw edges (lines) and particles
-        scene.lines(cloth_3d.pos, indices=cloth_3d.indices, color=(0, 0, 1), width=0.002)
-        scene.particles(cloth_3d.pos, radius=0.005, color=(0, 0, 1))
+        scene.lines(cube_3d.pos, indices=cube_3d.indices, color=(0, 0, 1), width=0.002)
+        scene.particles(cube_3d.pos, radius=0.005, color=(0, 0, 1))
 
         canvas.scene(scene)
         window.show()
