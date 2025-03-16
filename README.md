@@ -248,3 +248,7 @@ adopted from: https://github.com/taichi-dev/taichi/blob/master/python/taichi/exa
 make the spring heterogeneous
 
 #### 3. HeteroWithBending2.py
+
+Questions
+1. lung mesh? image to mesh models:
+2. 
