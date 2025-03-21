@@ -1,5 +1,7 @@
 1. What kind of the problems we will solve?
+
 A general simulation from https://github.com/febiosoftware/FEBio/blob/develop/FECore/FEModel.cpp:
+
 hyperelastc material: neo-hookean method using fem,
 ![alt text](image.png)
 
@@ -10,7 +12,7 @@ And there are several other params in different situations:
 https://pmc.ncbi.nlm.nih.gov/articles/PMC9577367/pdf/fphys-13-984286.pdf
 ashma: https://journals.physiology.org/doi/epdf/10.1152/japplphysiol.01289.2010
 
-2. any other force? like boundary condition
+1. any other force? like boundary condition
 
 
 3. Any mesh samples? 
@@ -49,7 +51,7 @@ $$
 $$
 
 
-This matrix encapsulates the element's initial shape and its determinant is related to the element's volume (or area in 2D).
+This matrix is the element's initial shape and its determinant is related to the element's volume (or area in 2D).
 
 2. Computing the Deformation Gradient
 
