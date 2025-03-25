@@ -1,14 +1,16 @@
-import numpy as np          # 用于数组操作（如mask.astype(np.uint16)）
-import nibabel as nib       # 读取医学影像NIfTI文件（如nib.load）
-import pygalmesh            # 生成四面体网格（generate_from_array）
-import meshio               # 网格文件的读写（如meshio.xdmf.write）
-from pathlib import Path    # 处理文件路径（如case.mesh_dir.mkdir）
+import numpy as np          
+import nibabel as nib       
+import pygalmesh            
+import meshio               
+from pathlib import Path    
 
-# 以下为项目自定义模块（假设在项目代码中定义）
-from project.meshing import (
-    remove_unused_points,   # 清理未使用的网格顶点
-    load_mesh_fenics        # 加载网格到FEniCS
-)
+
+"""from project.meshing import (
+    remove_unused_points,   
+    load_mesh_fenics        
+)"""
+
+
 def generate_anatomical_mesh(case, phase, mask_roi, mesh_version):
     
     mask_file = case.totalseg_mask_file(phase, mask_roi) # this is a file path
