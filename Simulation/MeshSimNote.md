@@ -206,5 +206,5 @@ $$
 \frac{1}{2} \mathbf{x}^{\top} \mathbf{L} \mathbf{x}-\mathbf{x}^{\top} \mathbf{J d} .
 $$
 
-- Quadratic Term ( $\mathbf{x}^{\top} \mathbf{L} \mathbf{x}$ ): Captures energy from particle displacements relative to each other.
-- Linear Term ( $-\mathbf{x}^{\top} \mathbf{J d}$ ): Couples particle positions with spring rest directions.
+- Quadratic Term ( $\mathbf{x}^{\top} \mathbf{L} \mathbf{x}$ ): energy from particle displacements relative to each other.
+- Linear Term ( $-\mathbf{x}^{\top} \mathbf{J d}$ ):  particle positions with spring rest directions.
