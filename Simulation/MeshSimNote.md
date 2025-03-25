@@ -195,8 +195,8 @@ $$
 
 ### Physical Interpretation
 Finally, follow the original paper, we have:
-- L encodes the stiffness interactions between particles. Diagonal blocks represent "self-stiffness," while off-diagonal blocks represent "coupling stiffness" between connected particles.
-- J maps the spring directions $\mathbf{d}_i$ to the particle displacements. Each column block ensures that the direction of a spring influences only its connected particles.
+- L represents the stiffness interactions between particles. Diagonal blocks represent "self-stiffness," while off-diagonal blocks represent "coupling stiffness" between connected particles.
+- J represents the spring directions $\mathbf{d}_i$ to the particle displacements. Each column block ensures that the direction of a spring influences only its connected particles.
 
 ### Example Energy Calculation
 
