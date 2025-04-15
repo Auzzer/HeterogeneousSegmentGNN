@@ -4,7 +4,7 @@ import taichi as ti
 
 @ti.data_oriented
 class Cube3D:
-    def __init__(self, N=4):
+    def __init__(self, N=10):
         """
         Creates a 3D grid with (N+1)^3 vertices and only structural edges (x,y,z).
         This version implements the variational implicit Euler update:
@@ -92,7 +92,7 @@ class Cube3D:
             self.pos[idx] = ti.Vector([x_coord, y_coord, z_coord])
             self.initPos[idx] = self.pos[idx]
             self.vel[idx] = ti.Vector.zero(ti.f32, 3)
-            self.mass[idx] = 0.2
+            self.mass[idx] = 1
 
     @ti.kernel
     def init_edges(self):
@@ -121,7 +121,7 @@ class Cube3D:
     @ti.kernel
     def init_spring_stiffness(self):
         for e in range(self.NE):
-            self.spring_ks[e] = 1000
+            self.spring_ks[e] = 100
 
     @ti.kernel
     def init_prev_positions(self):
@@ -392,7 +392,7 @@ def main():
     while window.running:
         cube_3d.update(h)
         camera.position(1.2, 1.2, 1.2)
-        camera.lookat(0.5, 1.0, 0.5)
+        camera.lookat(0.5, 0.5, 0.5)
         scene.set_camera(camera)
         scene.lines(cube_3d.pos, indices=cube_3d.indices, color=(0, 0, 1), width=0.002)
         scene.particles(cube_3d.pos, radius=0.005, color=(0, 0, 1))
